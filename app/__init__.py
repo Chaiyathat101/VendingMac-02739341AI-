@@ -1,0 +1,1 @@
+"""Vending machine application package."""

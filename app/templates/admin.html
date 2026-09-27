@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ตู้เครื่องเขียน</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">⚙️ Admin Panel</span>
+    </div>
+    <div class="topbar-right"></div>
+  </header>
+
+  <!-- Login overlay -->
+  <div id="login-overlay" class="overlay">
+    <div class="modal-box">
+      <h2>🔐 เข้าสู่ระบบ Admin</h2>
+      <input id="username" placeholder="ชื่อผู้ใช้" value="admin" />
+      <input id="password" type="password" placeholder="รหัสผ่าน" />
+      <button class="btn-pay" onclick="doLogin()">เข้าสู่ระบบ</button>
+      <p id="login-error" style="color:red;display:none">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+    </div>
+  </div>
+
+  <main class="admin-layout" id="admin-content" style="display:none">
+    <!-- Stats -->
+    <section class="stats-row" id="stats-row"></section>
+
+    <div class="admin-cols">
+      <!-- ซ้าย: รายการสินค้า -->
+      <section class="card">
+        <h3>📦 สินค้าทั้งหมด</h3>
+        <table class="product-table" id="product-table">
+          <thead>
+            <tr>
+              <th>รูป</th>
+              <th>ชื่อสินค้า</th>
+              <th>หมวด</th>
+              <th>ราคา</th>
+              <th>stock</th>
+              <th>สถานะ</th>
+              <th>พยากรณ์</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="product-tbody"></tbody>
+        </table>
+      </section>
+
+      <!-- ขวา: เพิ่มสินค้า + ประวัติขาย -->
+      <div class="admin-right">
+        <section class="card">
+          <h3>➕ เพิ่มสินค้าใหม่</h3>
+          <form id="product-form" onsubmit="addProduct(event)">
+            <input id="p_name" placeholder="ชื่อสินค้า" required />
+            <input id="p_price" type="number" step="0.5" placeholder="ราคา (บาท)" required />
+            <input id="p_stock" type="number" min="0" placeholder="จำนวน stock" required />
+            <input id="p_threshold" type="number" min="1" placeholder="แจ้งเตือนเมื่อเหลือ (ชิ้น)" value="5" />
+            <select id="p_category">
+              <option value="ปากกา">ปากกา</option>
+              <option value="ดินสอ">ดินสอ</option>
+              <option value="กระดาษ">กระดาษ</option>
+              <option value="อุปกรณ์">อุปกรณ์</option>
+              <option value="general">อื่นๆ</option>
+            </select>
+            <button type="submit" class="btn-pay">เพิ่มสินค้า</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h3>🧾 ประวัติการขาย (50 รายการล่าสุด)</h3>
+          <div class="sales-list" id="sales-list">กำลังโหลด...</div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/js/admin.js"></script>
+
+  <!-- Modal แก้ไขสินค้า -->
+  <div class="modal" id="edit-modal" style="display:none">
+    <div class="modal-box" style="text-align:left;max-width:420px">
+      <h3 style="margin-bottom:16px">✏️ แก้ไขสินค้า</h3>
+      <input type="hidden" id="edit-id" />
+
+      <label class="form-label">ชื่อสินค้า</label>
+      <input id="edit-name" class="form-input" placeholder="ชื่อสินค้า" />
+
+      <label class="form-label">ราคา (บาท)</label>
+      <input id="edit-price" type="number" step="0.5" class="form-input" placeholder="ราคา" />
+
+      <label class="form-label">จำนวน Stock</label>
+      <input id="edit-stock" type="number" min="0" class="form-input" placeholder="stock" />
+
+      <label class="form-label">แจ้งเตือนเมื่อเหลือ (ชิ้น)</label>
+      <input id="edit-threshold" type="number" min="1" class="form-input" placeholder="5" />
+
+      <label class="form-label">หมวดหมู่</label>
+      <select id="edit-category" class="form-input">
+        <option value="ปากกา">ปากกา</option>
+        <option value="ดินสอ">ดินสอ</option>
+        <option value="กระดาษ">กระดาษ</option>
+        <option value="อุปกรณ์">อุปกรณ์</option>
+        <option value="general">อื่นๆ</option>
+      </select>
+
+      <label class="form-label">สถานะ</label>
+      <select id="edit-status" class="form-input">
+        <option value="active">เปิดขาย</option>
+        <option value="inactive">ปิดชั่วคราว</option>
+      </select>
+
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-pay" style="flex:1" onclick="saveEdit()">💾 บันทึก</button>
+        <button class="btn-clear" style="flex:1" onclick="closeEdit()">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตู้เครื่องเขียนอัตโนมัติ</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">🖊️ <span>ตู้เครื่องเขียนอัตโนมัติ</span></span>
+    </div>
+    <div class="topbar-right"></div>
+  </header>
+
+  <main class="full-layout">
+    <div class="panel-header">
+      <h2>สินค้าทั้งหมด</h2>
+      <div class="filter-bar" id="category-filter"></div>
+    </div>
+    <div class="product-grid" id="product-grid">
+      <div class="loading">กำลังโหลด...</div>
+    </div>
+  </main>
+
+  <!-- Floating cart button -->
+  <button class="cart-fab" id="cart-fab" onclick="openCart()">
+    🛒
+    <span class="cart-badge" id="cart-badge" style="display:none">0</span>
+  </button>
+
+  <!-- Cart Drawer (slide up from bottom) -->
+  <div class="cart-backdrop" id="cart-backdrop" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="drawer-header">
+      <h2>🛒 ตะกร้าสินค้า</h2>
+      <button class="drawer-close" onclick="closeCart()">✕</button>
+    </div>
+
+    <div class="cart-items" id="cart-items">
+      <p class="empty-cart">ยังไม่มีสินค้า</p>
+    </div>
+
+    <div class="cart-summary">
+      <div class="summary-row">
+        <span>ราคารวม</span>
+        <span id="cart-total">0 บาท</span>
+      </div>
+      <div class="summary-row discount" id="discount-row" style="display:none">
+        <span>ส่วนลด</span>
+        <span id="cart-discount" class="green">-0 บาท</span>
+      </div>
+      <div class="summary-row total">
+        <span>ยอดสุทธิ</span>
+        <span id="cart-final">0 บาท</span>
+      </div>
+    </div>
+
+    <div class="payment-section">
+      <label>วิธีชำระเงิน</label>
+      <select id="payment_method">
+        <option value="cash">💵 เงินสด</option>
+        <option value="qr_code">📱 QR Code</option>
+      </select>
+
+      <label>จำนวนเงินที่จ่าย (บาท)</label>
+      <input type="number" id="amount_paid" placeholder="0.00" min="0" step="1" />
+
+      <button class="btn-pay" onclick="checkout()">✅ ชำระเงิน</button>
+      <button class="btn-clear" onclick="clearCart()">🗑️ ล้างตะกร้า</button>
+    </div>
+  </div>
+
+  <!-- Modal ผลลัพธ์ -->
+  <div class="modal" id="result-modal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-icon" id="modal-icon">✅</div>
+      <h3 id="modal-title">สำเร็จ</h3>
+      <div id="modal-body"></div>
+      <button class="btn-pay" onclick="closeModal()">ตกลง</button>
+    </div>
+  </div>
+
+  <!-- QR Payment Modal -->
+  <div class="modal" id="qr-modal" style="display:none" onclick="if(event.target===this)closeQRModal()">
+    <div class="modal-box" style="max-width:360px;padding:0;overflow:hidden;border-radius:16px">
+      <div style="background:#4a1a6e;padding:16px;text-align:center">
+        <span style="color:#fff;font-size:1.1rem;font-weight:700">📱 สแกนเพื่อชำระเงิน</span>
+      </div>
+      <div style="padding:20px;text-align:center;background:#fff">
+        <img src="/static/images/qr_payment.png" alt="QR PromptPay"
+          style="width:100%;max-width:280px;border-radius:8px;display:block;margin:0 auto" />
+        <div style="margin-top:16px;font-size:1rem;color:#333">ยอดที่ต้องชำระ</div>
+        <div style="font-size:2rem;font-weight:800;color:#4a1a6e;margin:4px 0">
+          <span id="qr-total-amount">0</span> บาท
+        </div>
+        <p style="font-size:0.8rem;color:#888;margin:8px 0 16px">* สแกนด้วย app ธนาคารใดก็ได้ที่รองรับ PromptPay</p>
+        <button class="btn-pay" onclick="confirmQRPayment()"
+          style="width:100%;background:#4a1a6e;color:#fff;border:none;padding:14px;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer">
+          ✅ ชำระแล้ว ยืนยัน
+        </button>
+        <button onclick="closeQRModal()"
+          style="width:100%;background:transparent;border:1px solid #ccc;padding:10px;border-radius:10px;font-size:0.9rem;cursor:pointer;margin-top:8px;color:#666">
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating action buttons (left side) -->
+  <div class="fab-left-stack">
+    <button class="fab-left" id="fab-chat" onclick="openChatbot()" title="แชทบอท">💬</button>
+    <button class="fab-left" id="fab-contact" onclick="openContact()" title="ติดต่อ">📞</button>
+    <button class="fab-left" id="fab-dev" onclick="openDev()" title="ผู้พัฒนา">👨‍💻</button>
+  </div>
+
+  <!-- Chatbot Modal -->
+  <div class="modal" id="chatbot-modal" style="display:none" onclick="if(event.target===this)closeChatbot()">
+    <div class="modal-box chatbot-box">
+      <div class="modal-header-bar">
+        <span>💬 VendBot — ผู้ช่วยอัตโนมัติ</span>
+        <button class="modal-close-btn" onclick="closeChatbot()">✕</button>
+      </div>
+      <!-- Messages area -->
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-bubble bot">
+          <div class="bubble-avatar">🤖</div>
+          <div class="bubble-text">สวัสดีครับ! ผม <strong>VendBot</strong> 👋<br>ช่วยตอบคำถามเกี่ยวกับสินค้าและการชำระเงินได้ครับ</div>
+        </div>
+        <div class="chat-quick-replies" id="chat-init-qr">
+          <button class="quick-reply-btn" onclick="sendQuick('สินค้ามีอะไรบ้าง')">📦 สินค้ามีอะไรบ้าง</button>
+          <button class="quick-reply-btn" onclick="sendQuick('วิธีชำระเงิน')">💳 วิธีชำระเงิน</button>
+          <button class="quick-reply-btn" onclick="sendQuick('ติดต่อเจ้าหน้าที่')">📞 ติดต่อ</button>
+        </div>
+      </div>
+      <!-- Input -->
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" class="chat-input" placeholder="พิมพ์ข้อความ..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send-btn" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Modal -->
+  <div class="modal" id="contact-modal" style="display:none" onclick="if(event.target===this)closeContact()">
+    <div class="modal-box" style="max-width:380px;text-align:left;padding:0;overflow:hidden">
+      <div class="modal-header-bar">
+        <span>📞 ช่องทางการติดต่อ</span>
+        <button class="modal-close-btn" onclick="closeContact()">✕</button>
+      </div>
+      <div style="padding:24px 28px">
+        <div class="contact-row">
+          <span class="contact-icon">📱</span>
+          <div>
+            <div class="contact-label">เบอร์โทรศัพท์</div>
+            <div class="contact-value">080-338-xxxx</div>
+          </div>
+        </div>
+        <div class="contact-row">
+          <span class="contact-icon">📧</span>
+          <div>
+            <div class="contact-label">อีเมล</div>
+            <div class="contact-value">chaiyathat.t@ku.th</div>
+          </div>
+        </div>
+        <div class="contact-row">
+          <span class="contact-icon">💬</span>
+          <div>
+            <div class="contact-label">LINE</div>
+            <div class="contact-value">@vendingmac</div>
+          </div>
+        </div>
+        <div class="contact-row" style="border:none">
+          <span class="contact-icon">🕐</span>
+          <div>
+            <div class="contact-label">เวลาทำการ</div>
+            <div class="contact-value">ทุกวัน (ยกเว้นวันหยุดนักขัตฤกษ์) 08:00 – 15:30 น.</div>
+          </div>
+        </div>
+        <button class="btn-pay" onclick="closeContact()" style="width:100%;margin-top:20px">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Developer Modal -->
+  <div class="modal" id="dev-modal" style="display:none" onclick="if(event.target===this)closeDev()">
+    <div class="modal-box" style="max-width:380px;padding:0;overflow:hidden">
+      <div class="modal-header-bar">
+        <span>👨‍💻 ผู้พัฒนา</span>
+        <button class="modal-close-btn" onclick="closeDev()">✕</button>
+      </div>
+      <div style="padding:28px;text-align:center">
+        <!-- รูปโปรไฟล์ -- คลิกเพื่อ upload -->
+        <div style="position:relative;display:inline-block;margin-bottom:14px;cursor:pointer" onclick="document.getElementById('dev-photo-input').click()" title="คลิกเพื่อเปลี่ยนรูป">
+          <img id="dev-photo"
+            src="/static/images/developer.jpg"
+            onload="this.style.display='block';document.getElementById('dev-photo-placeholder').style.display='none'"
+            onerror="this.style.display='none';document.getElementById('dev-photo-placeholder').style.display='flex'"
+            style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;display:none"
+            alt="ผู้พัฒนา">
+          <div id="dev-photo-placeholder"
+            style="display:flex;width:90px;height:90px;border-radius:50%;background:#eef3ff;border:3px solid #e2e8f0;align-items:center;justify-content:center;font-size:2.8rem">
+            👤
+          </div>
+          <div style="position:absolute;bottom:0;right:0;background:#0f3460;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;border:2px solid white">
+            📷
+          </div>
+        </div>
+        <input type="file" id="dev-photo-input" accept="image/*" style="display:none" onchange="uploadDevPhoto(event)">
+        <h3 style="font-size:1.15rem;font-weight:800;color:#1a1a2e;margin-bottom:4px">นาย ชัยทัด แถสูงเนิน</h3>
+        <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:20px">Developer / Project Owner</p>
+        <div style="background:#f8faff;border-radius:12px;padding:16px;text-align:left">
+          <div class="contact-row" style="padding:6px 0">
+            <span class="contact-icon" style="font-size:1.1rem">🏫</span>
+            <div><div class="contact-value" style="font-size:0.88rem">มหาวิทยาลัยเกษตรศาสตร์ วิทยาเขตกำแพงแสน</div></div>
+          </div>
+          <div class="contact-row" style="padding:6px 0;border:none">
+            <span class="contact-icon" style="font-size:1.1rem">📅</span>
+            <div><div class="contact-value" style="font-size:0.88rem">รายวิชา 02739341 AI</div></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:10px;background:#eef3ff;border-radius:10px;font-size:0.8rem;color:#475569;line-height:1.6">
+          ระบบตู้เครื่องเขียนอัตโนมัติ<br>พัฒนาด้วย Python + FastAPI + Algorithm
+        </div>
+        <button class="btn-pay" onclick="closeDev()" style="width:100%;margin-top:18px">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
